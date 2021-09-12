@@ -3,7 +3,7 @@ from sympy import var, poly, core
 
 def help():
     print("---Tool list---")
-    print("interpolation(i, o, p) -> [coeff] : Lagrange interpolation")
+    print("interpolation(input, output, p) -> [coeff] : Lagrange interpolation")
 
 
 def interpolation(_input, _output, p):

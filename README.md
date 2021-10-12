@@ -36,7 +36,7 @@ from ta1yak1tool import RSA
 RSA.help()
 ```
 
-# How to import sage file
+# How to import sage file (for developer)
 
 ```
 $ sage -preparse *.sage;mv *.sage.py *.py

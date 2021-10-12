@@ -1,8 +1,9 @@
+import sys
 
 def help():
     print("---Tool list---")
     print("smart(p, A, B, P, Q) -> k : Calculation of k such that Q = k*P. It is efficient when EC.order == p")
-    print("pohlig(p, A, B, P, Q, bound=0) -> k : It is efficient when we can get the result of factorization of EC.order()")
+    print("pohlig(p, A, B, P, Q) -> k : It is efficient when we can get the result of factorization of P.order()")
     print("calc_A_B(p, P, Q) -> [A,B] : Calculation of coefficient A and B such that y^2 = x^3+Ax + B mod p, from two point P and Q")
     print("singular(p, A, P, Q)-> k : It is efficient when the elliptic curve is singular")
 
@@ -29,33 +30,59 @@ def smart(p, A, B, P:list, Q:list):
     return e[0]
 
 # from: https://furutsuki.hatenablog.com/entry/2020/05/05/112207#ptr-yudai%E3%81%AE%E7%99%BA%E8%A1%A8
-def pohlig(p, A, B, P:list, Q:list, bound=0):
-    EC = EllipticCurve(GF(p), [A, B])
-    _P = EC((P[0], P[1]))
-    _Q = EC((Q[0], Q[1]))
-    order = EC.order()
-    factors = list(factor(order))
-    mods = []
-    zs = []
-    cur = 1
-    if bound == 0:
-        bound = order-1
+def pohlig(p, A, B, P:list, Q:list):
+    def bsgs_add(g, h, n):
+        assert 0 * g == n * g
+        m = int(sqrt(n))
+        if pow(m, 2) != n:
+            m += 1
+        ls = [(j * g) for j in range(m)]
+        gamma = h
+        for i in range(m):
+            if gamma in ls:
+                ret = i * m + ls.index(gamma)
+                assert ret * g == h
+                return ret
+            else:
+                gamma += (n-m) * g
+        print('[+] Not Found')
+        assert 1 == 2
+        return -1
 
-    for f in factors:
-        p, e = f
-        pe = p**e
-        Pi = (order // pe) * _P
-        Qi = (order // pe) * _Q
-        zi = Pi.discrete_log(Qi)
-        zs.append(zi)
-        mods.append(pe)
-        cur *= pe
-        if cur > bound:
-            break
-    
-    ret = CRT(zs, mods)
-    assert(ret * _P == _Q)
-    return ret
+    def pohlig_prime_add(g, h, p, e):
+        n = pow(p, e)
+        assert 0 * g == n * g
+        x = 0
+        gamma = pow(p, e-1) * g
+        for k in range(e):
+            hk = pow(p, e-1-k) * ((n-x) * g + h)
+            dk = bsgs_add(gamma, hk, p)
+            x += pow(p, k) * dk
+        assert x * g == h
+        print('[+] Found discrete log {} in modulo {}^{}'.format(x, p, e))
+        return x
+
+    EC = EllipticCurve(GF(p), [A,B])
+    g = EC((P[0], P[1]))
+    h = EC((Q[0], Q[1]))
+    n = g.order()
+    assert 0 * g == n * g
+    xi_ls = []
+    mod_ls = []
+    f = factor(n)
+    print('[+] factorize :',f)
+    for p, e in list(f):
+        gi = (n//pow(p, e)) * g
+        hi = (n//pow(p, e)) * h
+        xi_ls.append(pohlig_prime_add(gi, hi, p, e))
+        mod_ls.append(pow(p, e))
+        ret = crt(xi_ls, mod_ls)
+        if g * ret == h:
+            print('[+] Final result:', ret)
+            return ret
+    print('[+] Not Found')
+    sys.exit()
+    return -1
 
 
 def calc_A_B(p, P, Q):
@@ -81,7 +108,6 @@ def singular(p, A:list, P, Q):
         Di = -b2^2*b8 - 8*b4^3 - 27*b6^2 + 9*b2*b4*b6
         assert(Di % p == 0)
         
-        x = 413400541209677581972773119133520959089878607131
         r = mod((4*a2 + a1^2)^2 - 24 * (2*a4 + a1*a3), p).sqrt()
         if r == 0:
             x = -(4*a2 + a1**2) * pow(12, -1, p) % p

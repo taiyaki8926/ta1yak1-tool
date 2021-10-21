@@ -1,5 +1,5 @@
 import gmpy2
-import owiener # if there is no module, then "python3 -m pip install owiener"
+# import owiener # if there is no module, then "python3 -m pip install owiener"
 from sympy import *
 import subprocess
 
@@ -8,8 +8,7 @@ def help():
     print("---Tool list---")
     print("calc_prime_from_d(d, e, n) -> (p, q) : Calculation of primes p and q from n, e and d")
     print("lowpub(c, e, n) -> m : It is efficient when e is very small")
-    print("wiener(c, e, n) -> m : It is efficient when e is very large")
-    print("view_lsb_decryption_oracle(): It is efficient when there exists an oracle that returns the LSB of the arbitrary plaintext")
+    print("view_lsb_decryption_oracle(): When there exists an oracle that returns the LSB of the arbitrary plaintext")
     print("    Note : you must copy and paste this function and to your own solver, and implement 'get_oracle' function. ")
     print("           Cannot import because of the lack of my knowledge :(")
 
@@ -29,16 +28,17 @@ def calc_prime_from_d(d, e, n):
                 x = Symbol('x')
                 p, q = solve(x ** 2 - _sum * x + n)
                 if p.is_integer :
-                    return p, q
+                    return int(p), int(q)
 
 def lowpub(c, e, n):
     m = gmpy2.iroot(c, e)[0]
     return m
 
+'''
 def wiener(c, e, n):
     d = owiener.attack(e, n)
     return pow(c, d, n)
-
+'''
 
 def view_get_oracle():
     print('''# this is the sample of get_oracle function
